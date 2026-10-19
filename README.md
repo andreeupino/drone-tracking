@@ -1,56 +1,99 @@
 # Drone Tracking
 
-Aplicación que muestra en un mapa los vuelos de drones en tiempo real. Un simulador envía detecciones por WebSocket al backend, que las valida, las guarda en MongoDB y las retransmite a los navegadores. Al recargar la página, el recorrido completo se recupera por API.
+Aplicación web para visualizar en un mapa las detecciones y trayectorias de drones en tiempo real. Un simulador envía detecciones mediante WebSocket al backend, que las valida, las almacena en MongoDB y las retransmite a los clientes conectados. Al cargar la aplicación, el recorrido disponible se recupera mediante la API REST.
 
-## Stack
+## Stack tecnológico
 
-- **Backend:** Java 25, Spring Boot 4 (Web, WebSocket, Data MongoDB, Validation)
-- **Frontend:** Angular + Leaflet
+- **Backend:** Java, Spring Boot (Web, WebSocket, Data MongoDB y Validation)
+- **Frontend:** Angular y Leaflet
 - **Base de datos:** MongoDB
-- **Simulador:** Java (un único archivo)
+- **Simulador:** Java
 
-## Estructura
+## Estructura del proyecto
 
-```
-backend/      API REST + servidor WebSocket
-frontend/     Angular + Leaflet
-simulator/    Simulator.java
+```text
+drone-tracking/
+├── backend/      # API REST y servidor WebSocket
+├── frontend/     # Aplicación Angular y mapa interactivo
+└── simulator/    # Simulador de detecciones
 ```
 
 ## Requisitos
 
-- JDK 25
-- Node.js y Angular CLI (`npm i -g @angular/cli`)
-- MongoDB (o Docker)
+- JDK compatible con la versión configurada en el backend.
+- Node.js y npm.
+- Angular CLI.
+- Docker para ejecutar MongoDB (o una instalación local de MongoDB).
 
-## Cómo arrancarlo
+## Puesta en marcha
 
-Orden: MongoDB, backend, frontend y simulador, cada uno en una terminal.
+Inicia cada componente en una terminal independiente, siguiendo este orden.
+
+### 1. Base de datos
+
+Si todavía no existe el contenedor:
 
 ```bash
-# 1. MongoDB
 docker run -d -p 27017:27017 --name mongo mongo:7
+```
 
-# 2. Backend (http://localhost:8080)
+Si el contenedor ya existe y está detenido:
+
+```bash
+docker start mongo
+```
+
+### 2. Backend
+
+Desde la raíz del proyecto:
+
+```bash
 cd backend
-./mvnw spring-boot:run          # Windows: .\mvnw.cmd spring-boot:run
+```
 
-# 3. Frontend (http://localhost:4200)
+En Windows:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+En Linux/macOS:
+
+```bash
+./mvnw spring-boot:run
+```
+
+El backend estará disponible en `http://localhost:8080`.
+
+**Configuración:** asegúrate de que el token de ingesta configurado en el backend coincide con el que utiliza el simulador.
+
+### 3. Frontend
+
+Desde la raíz del proyecto:
+
+```bash
 cd frontend
 npm install
-ng serve
+npx ng serve
+```
 
-# 4. Simulador
+La aplicación estará disponible en `http://localhost:4200`.
+
+### 4. Simulador
+
+Desde la raíz del proyecto:
+
+```bash
 cd simulator
 java Simulator.java
 ```
 
-Al abrir http://localhost:4200 se verán 3 drones moviéndose en el mapa.
+El simulador enviará detecciones de tres drones al backend mediante WebSocket.
 
 ## Endpoints
 
-| Ruta | Descripción |
-|---|---|
-| `GET /api/flights/active` | Vuelos con detecciones en los últimos 2 minutos, con su recorrido |
-| `WS /ws/ingest` | Entrada de detecciones (exige la cabecera `X-Ingest-Token`) |
-| `WS /ws/live` | Detecciones en tiempo real para el frontend |
+| Método | Ruta | Descripción |
+|---|---|---|
+| HTTP | `GET /api/flights/active` | Recupera las detecciones de los drones con actividad reciente. |
+| WebSocket | `/ws/ingest` | Recibe detecciones y requiere la cabecera `X-Ingest-Token`. |
+| WebSocket | `/ws/live` | Transmite nuevas detecciones a los clientes conectados. |
